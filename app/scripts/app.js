@@ -6,15 +6,13 @@ chrome.runtime.onInstalled.addListener(function (details) {
 
 function registerCallback(registrationId) {
   if (chrome.runtime.lastError) {
-    alert("failed")
+    alert("Add your sender id...")
     return;
   }
 
   // Send the registration token to your application server.
   sendRegistrationId(function(succeed) {
-    alert(registrationId);
     if (succeed){
-      alert("Registration a Success");
       chrome.storage.local.set({registered: true});
       chrome.storage.local.set({registrationId: registrationId});
     }

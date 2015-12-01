@@ -12,7 +12,7 @@
     "scripts": [
       "scripts/app.js",
       "bower_components/chrome-storage-promise/dist/chrome-storage-promise.js",
-      "bower_components/jquery/jquery.min.js"
+      "bower_components/jquery/dist/jquery.min.js"
     ]
   },
   "permissions": [
