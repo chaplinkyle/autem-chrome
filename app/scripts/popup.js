@@ -1,16 +1,29 @@
 'use strict';
 
 chrome.storage.local.get("registrationId", function(result) {
-  document.getElementById("registrationId-display").value = result["registrationId"];
+  if(result["registrationId"]) {
+    document.getElementById("registrationId-display").value = result["registrationId"];
+  }
 });
 
 chrome.storage.local.get("deviceToken", function(result) {
-  document.getElementById("device-token").value = result["deviceToken"];
+  if(result["deviceToken"]){
+    document.getElementById("device-token").value = result["deviceToken"];
+  }
 });
 
-chrome.storage.local.get("apiToken", function(result) {
-  document.getElementById("api-token").value = result["apiToken"];
+chrome.storage.local.get("apiKey", function(result) {
+  if(result["apiKey"]){
+    document.getElementById("api-key").value = result["apiKey"];
+  }
 });
+
+chrome.storage.local.get("projectNumber", function(result) {
+  if(result["projectNumber"]){
+    document.getElementById("project-number").value = result["projectNumber"];
+  }
+});
+
 
 function testMessage() {
   var message = document.getElementById('test-message').value
@@ -18,18 +31,25 @@ function testMessage() {
 }
 
 function save() {
-  var deviceToken = document.getElementById('device-token').value;
-  chrome.storage.local.set({'deviceToken': deviceToken});
+  var projectNumber = document.getElementById('project-number').value;
+  if(projectNumber) {
+    chrome.storage.local.set({'projectNumber': projectNumber});
+    chrome.extension.getBackgroundPage().init();
+  }
 
-  var apiToken = document.getElementById('api-token').value;
-  chrome.storage.local.set({'apiToken': apiToken});
+  var deviceToken = document.getElementById('device-token').value;
+  if(deviceToken) {
+    chrome.storage.local.set({'deviceToken': deviceToken});
+  }
+
+  var apiKey = document.getElementById('api-key').value;
+  if(apiKey) {
+    chrome.storage.local.set({'apiKey': apiKey});
+  }
 }
 
 document.addEventListener('DOMContentLoaded', function () {
-  document.getElementById('save-button').addEventListener('click', save);
-});
-
-document.addEventListener('DOMContentLoaded', function () {
+  document.getElementById("save-button").addEventListener('click', save);
   document.getElementById('send-button').addEventListener('click', testMessage);
 });
 

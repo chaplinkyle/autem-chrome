@@ -19,26 +19,28 @@ function registerCallback(registrationId) {
   });
 }
 
-function sendRegistrationId(callback) {
-  callback(true);
-}
-
-chrome.runtime.onStartup.addListener(function() {
-  console.log("starting")
-
+function init() {
   chrome.storage.promise.local.get('registered')
     .then(function(data) {
       if (data.registered)
         return;
 
-      console.log("registering...")
-      var senderIds = ["???"];
-      chrome.gcm.register(senderIds, registerCallback);
+      registerWithGcm();
     }, function(error) {
       console.log("No device token stored.");
     });
+}
 
-});
+function registerWithGcm(){
+  chrome.storage.promise.local.get('projectNumber')
+    .then(function(data) {
+      console.log("registering...")
+      var senderIds = [data.projectNumber];
+      chrome.gcm.register(senderIds, registerCallback);
+    }, function(error) {
+      console.log("No project number stored.");
+    });
+}
 
 function sendMessage(message) {
   chrome.storage.promise.local.get('deviceToken')
@@ -51,15 +53,19 @@ function sendMessage(message) {
     });
 }
 
+function sendRegistrationId(callback) {
+  callback(true);
+}
+
 function post(json) {
-  chrome.storage.promise.local.get('apiToken')
+  chrome.storage.promise.local.get('apiKey')
     .then(function(data) {
-      var apiToken = data.apiToken;
+      var apiKey = data.apiKey;
       jQuery.ajax({
         url: 'https://android.googleapis.com/gcm/send',
         method: 'post',
         headers: {
-          'Authorization': 'key='+apiToken,
+          'Authorization': 'key='+apiKey,
           'X-Request': 'JSON',
           'Content-Type': 'application/json'},
         data: json
