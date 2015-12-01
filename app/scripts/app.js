@@ -80,10 +80,33 @@ chrome.gcm.onMessage.addListener(function(obj) {
   var message = obj.data.message;
   console.log(message);
 
-  chrome.notifications.create({
+  var notification = chrome.notifications.create("conversation",{
     type: "basic",
     iconUrl: "/images/icon-38.png",
+    buttons: [{"title": "Reply", iconUrl:"/images/icon-38.png"}],
     title: "Autem",
+    isClickable: true,
     message: message,
   });
+
+  chrome.notifications.onClicked.addListener(function(notificationId) {
+    if(notificationId == "conversation") {
+      openConversation();
+    }
+  })
+
+  chrome.notifications.onButtonClicked.addListener(function(notificationId, buttonIndex) {
+    if(notificationId == "conversation") {
+      if(buttonIndex == 0){
+        openConversation();
+      }
+    }
+  });
+
 });
+
+function openConversation() {
+  chrome.windows.create({'url': 'conversation.html', 'type': 'popup', width:320, height:420}, function(window) {
+
+  });
+}
