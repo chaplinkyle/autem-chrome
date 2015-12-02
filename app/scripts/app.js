@@ -1,16 +1,14 @@
 'use strict';
 
-var focusedConversation;
+var focusedConversationId;
 
 var ConversationService = ( function( window, undefined ) {
 
   function log(message) {
     var contact = message.from;
     var msg = message;
-
-    var conversation;
-
     return getConversations().then(function(conversations){
+      var conversation;
       var existingConversationFound;
       if(conversations){
         for (var i = 0; i < conversations.length; i++) {
@@ -19,6 +17,7 @@ var ConversationService = ( function( window, undefined ) {
             //update messages
             conversation.messages.push(msg);
             existingConversationFound = true;
+            break;
           }
         }
       } else {
@@ -30,8 +29,24 @@ var ConversationService = ( function( window, undefined ) {
         conversations.push(conversation);
       }
       return chrome.storage.promise.local.set({'conversations': conversations}).then(function() {
-        return conversation;
+        return conversation.contact;
       });
+    });
+  }
+
+  function getConversation(conversationId) {
+    return getConversations().then(function(conversations) {
+      return new Promise(function(resolve, reject){
+        if (conversations) {
+          for (var i = 0; i < conversations.length; i++) {
+            var conversation = conversations[i];
+            if (conversation.contact == conversationId) {
+              resolve(conversation);
+            }
+          }
+        }
+      });
+
     });
   }
 
@@ -40,12 +55,13 @@ var ConversationService = ( function( window, undefined ) {
       .then(function(data) {
         return data.conversations;
       }, function(){
-        return null;
+        console.log("no conversations found.")
       });
   }
 
   return {
-    log : log
+    log : log,
+    getConversation : getConversation
   };
 } )( window );
 
@@ -65,14 +81,18 @@ var GcmService = ( function( window, undefined ) {
     return chrome.storage.promise.local.get('projectNumber')
       .then(function(data) {
         var senderIds = [data.projectNumber];
-        return new Promise(function(resolve) {
+        return new Promise(function(resolve, reject) {
           chrome.gcm.register(senderIds, function(registrationId){
-            chrome.storage.local.set({registered: true});
-            chrome.storage.local.set({registrationId: registrationId});
-            resolve(registrationId);
+            if(registrationId){
+              chrome.storage.local.set({registered: true});
+              chrome.storage.local.set({registrationId: registrationId});
+              resolve(registrationId);
+            } else {
+              console.log(chrome.runtime.lastError)
+              reject("Registration failed because: " + chrome.runtime.lastError.message)
+            }
           });
         });
-        return null;
       });
   }
 
@@ -127,6 +147,10 @@ function post(json) {
           'X-Request': 'JSON',
           'Content-Type': 'application/json'},
         data: json
+      }).done(function(){
+        // todo
+      }).error(function(error){
+        // todo
       });
 
     }, function(error) {
@@ -137,15 +161,15 @@ function post(json) {
 chrome.gcm.onMessage.addListener(function(obj) {
   var gcmMessage = obj.data;
   var message = JSON.parse(gcmMessage.message);
-  ConversationService.log(message).then(function(conversation){
-    popNotification(message, conversation);
+  ConversationService.log(message).then(function(conversationId){
+    popNotification(message, conversationId);
   });
 });
 
-function popNotification(message, conversation){
+function popNotification(message, conversationId){
   var timestamp = new Date().getTime();
   timestamp = Math.floor(timestamp / 10000) * 10000 // Persist notification for 10 seconds... Then start new one.
-  var notificationId = "conversation-"+timestamp;
+  var notificationId = "conversation-"+conversationId+timestamp;
 
   var opts = {
     type: "basic",
@@ -160,21 +184,28 @@ function popNotification(message, conversation){
 
   chrome.notifications.getAll(function(notifications){
     if(notifications[notificationId]){
+      console.log("update:"+notificationId)
       chrome.notifications.update(notificationId, opts)
     } else {
-      chrome.notifications.create(notificationId, opts);
+      console.log("create:"+notificationId)
+      createNewMessageNotification(notificationId, opts, conversationId);
     }
   });
 
+}
+
+function createNewMessageNotification(notificationId, opts, conversationId) {
+  chrome.notifications.create(notificationId, opts);
+
   chrome.notifications.onClicked.addListener(function(id) {
     if(id.indexOf(notificationId) >= 0) {
-      openConversation(conversation);
+      openConversation(conversationId);
     }
   });
 
   chrome.notifications.onButtonClicked.addListener(function(id, buttonIndex) {
     if(id.indexOf(notificationId) >= 0 && buttonIndex == 0) {
-      openConversation(conversation);
+      openConversation(conversationId);
     }
   });
 
@@ -183,11 +214,11 @@ function popNotification(message, conversation){
       chrome.notifications.clear(notificationId);
     }
   });
-
 }
 
-function openConversation(conversation) {
-  focusedConversation = conversation;
+function openConversation(conversationId) {
+  console.log("setting focus to "+ conversationId);
+  focusedConversationId = conversationId;
   chrome.windows.create({
     'url': 'conversation.html',
     'type': 'popup',

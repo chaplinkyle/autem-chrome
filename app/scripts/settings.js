@@ -44,8 +44,9 @@ function register(){
     chrome.storage.promise.local.set({'projectNumber': projectNumber})
       .then(function(){
         GcmService.register().then(function(registrationId){
-          console.log("regId from settings:" + registrationId)
           initFields();
+        }, function(error){
+          document.getElementById("registrationId-display").value = error;
         });
       }
     );
