@@ -6,6 +6,10 @@ function testMessage() {
 }
 
 document.addEventListener('DOMContentLoaded', function () {
-  document.getElementById('send-button').addEventListener('click', testMessage);
+  jQuery('#send-button').on('click', testMessage);
+  jQuery('#app-settings-link').on('click', openSettings);
 });
 
+function openSettings() {
+  chrome.tabs.create({ url: "settings.html" });
+}
