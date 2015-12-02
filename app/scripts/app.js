@@ -20,7 +20,7 @@ var ConversationService = ( function( window, undefined ) {
           }
         }
       } else {
-        conversations = [];
+        conversations = []; // should be done in some sort of app initialization.
       }
       if(!existingConversationFound) {
         // push new conversation
