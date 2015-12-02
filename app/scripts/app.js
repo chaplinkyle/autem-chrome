@@ -78,7 +78,6 @@ var GcmService = ( function( window, undefined ) {
   function sendMessage(json) {
     chrome.storage.promise.local.get('apiKey')
       .then(function(data) {
-        console.log(json)
         var apiKey = data.apiKey;
         return jQuery.ajax({
           url: 'https://android.googleapis.com/gcm/send',
@@ -229,7 +228,6 @@ var Notifications = ( function( window, undefined ) {
 var Conversations = ( function( window, undefined ) {
 
   function openConversation(conversationId) {
-    console.log("setting focus to "+ conversationId);
     focusedConversationId = conversationId;
     chrome.windows.create({
       'url': 'conversation.html',
