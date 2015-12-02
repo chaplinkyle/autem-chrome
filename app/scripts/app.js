@@ -184,10 +184,8 @@ function popNotification(message, conversationId){
 
   chrome.notifications.getAll(function(notifications){
     if(notifications[notificationId]){
-      console.log("update:"+notificationId)
       chrome.notifications.update(notificationId, opts)
     } else {
-      console.log("create:"+notificationId)
       createNewMessageNotification(notificationId, opts, conversationId);
     }
   });
