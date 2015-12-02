@@ -2,6 +2,14 @@
 
 var focusedConversationId;
 
+chrome.gcm.onMessage.addListener(function(obj) {
+  var gcmMessage = obj.data;
+  var message = JSON.parse(gcmMessage.message);
+  ConversationService.log(message).then(function(conversationId){
+    Notifications.popNotification(message, conversationId);
+  });
+});
+
 var ConversationService = ( function( window, undefined ) {
 
   function log(message) {
@@ -67,6 +75,26 @@ var ConversationService = ( function( window, undefined ) {
 
 var GcmService = ( function( window, undefined ) {
 
+  function sendMessage(json) {
+    chrome.storage.promise.local.get('apiKey')
+      .then(function(data) {
+        console.log(json)
+        var apiKey = data.apiKey;
+        return jQuery.ajax({
+          url: 'https://android.googleapis.com/gcm/send',
+          method: 'post',
+          headers: {
+            'Authorization': 'key='+apiKey,
+            'X-Request': 'JSON',
+            'Content-Type': 'application/json'},
+          data: json
+        });
+
+      }, function(error) {
+        console.log("No api token stored.");
+      });
+  }
+
   function register(){
     return chrome.storage.promise.local.get('registered')
       .then(function(data) {
@@ -97,7 +125,126 @@ var GcmService = ( function( window, undefined ) {
   }
 
   return {
+    sendMessage : sendMessage,
     register : register
+  };
+} )( window );
+
+var MessageService = ( function( window, undefined ) {
+
+  function sendMessage(to, message) {
+    retrieveDeviceToken()
+      .then(function(deviceToken){
+        return buildPayload(deviceToken, to, message);
+      })
+      .then(pushToQueue);
+  }
+
+  function buildPayload(deviceToken, to, message){
+    return new Promise(function(resolve, reject){
+      if(deviceToken){
+        var payload = '{"to":"'+ to +'","message":"'+ message +'"}';
+        var queueMessage = '{"data"{"message":'+payload+'},"to":"'+deviceToken+'"}';
+        resolve(queueMessage);
+      } else {
+        reject("No device token stored.")
+      }
+    });
+  }
+
+  function pushToQueue(queueMessage) {
+      GcmService.sendMessage(queueMessage);
+  }
+
+  function retrieveDeviceToken() {
+    return chrome.storage.promise.local.get('deviceToken').then(function(data){ return data.deviceToken }); // Could go in storage module.
+  }
+
+  return {
+    sendMessage : sendMessage
+  };
+} )( window );
+
+var Notifications = ( function( window, undefined ) {
+
+  function popNotification(message, conversationId){
+    var timestamp = new Date().getTime();
+    timestamp = Math.floor(timestamp / 10000) * 10000 // Persist notification for 10 seconds... Then start new one.
+    var notificationId = "conversation-"+conversationId+timestamp;
+
+    var opts = {
+      type: "basic",
+      title: "Sms from: " + message.contactName,
+      iconUrl: "/images/icon-38.png",
+      buttons: [{"title": "Reply", iconUrl:"/images/icon-38.png"}],
+      isClickable: true,
+      eventTime: new Date().getTime(),
+      contextMessage: String(new Date(message.timestamp.iLocalMillis)),
+      message: message.message
+    }
+
+    chrome.notifications.getAll(function(notifications){
+      if(notifications[notificationId]){
+        chrome.notifications.update(notificationId, opts)
+      } else {
+        createNewMessageNotification(notificationId, opts, conversationId);
+      }
+    });
+  }
+
+  function createNewMessageNotification(notificationId, opts, conversationId) {
+    chrome.notifications.create(notificationId, opts);
+
+    chrome.notifications.onClicked.addListener(function(id) {
+      if(id.indexOf(notificationId) >= 0) {
+        Conversations.openConversation(conversationId);
+      }
+      if(id.indexOf(notificationId) >= 0) {
+        chrome.notifications.clear(notificationId);
+      }
+    });
+
+    chrome.notifications.onButtonClicked.addListener(function(id, buttonIndex) {
+      if(id.indexOf(notificationId) >= 0 && buttonIndex == 0) {
+        Conversations.openConversation(conversationId);
+      }
+      if(id.indexOf(notificationId) >= 0) {
+        chrome.notifications.clear(notificationId);
+      }
+    });
+
+    chrome.notifications.onClosed.addListener(function(id, closedByUser){
+      if(id.indexOf(notificationId) >= 0) {
+        chrome.notifications.clear(notificationId);
+      }
+    });
+  }
+
+
+  return {
+    popNotification : popNotification
+  };
+} )( window );
+
+var Conversations = ( function( window, undefined ) {
+
+  function openConversation(conversationId) {
+    console.log("setting focus to "+ conversationId);
+    focusedConversationId = conversationId;
+    chrome.windows.create({
+      'url': 'conversation.html',
+      'type': 'popup',
+      'width': 320,
+      'height': 420
+    });
+  }
+
+  function clearConversations(){
+    chrome.storage.local.set({conversations: []});
+  }
+
+  return {
+    openConversation : openConversation
   };
 } )( window );
 
@@ -105,126 +252,4 @@ chrome.runtime.onInstalled.addListener(function (details) {
   console.log('previousVersion', details.previousVersion);
 });
 
-function sendMessage(message) {
-  message = JSON.stringify(message);
-  chrome.storage.promise.local.get('deviceToken')
-    .then(function(data) {
-      var deviceToken = data.deviceToken;
-      var json = '{"data"{"message":'+message+'},"to":"'+deviceToken+'"}';
-      post(json);
-    }, function(error) {
-      console.log("No device token stored.");
-    });
-}
 
-
-function createTestMessage(message){
-  var msg = '{"from":"5152576553","message": "'+message+'","timestamp":{"iChronology":{"iBase":{"iMinDaysInFirstWeek":4}},"iLocalMillis":1449049419210}}';
-  sendTestMessage(msg);
-}
-
-function sendTestMessage(message) {
-  message = JSON.stringify(message);
-  chrome.storage.promise.local.get('registrationId')
-    .then(function(data) {
-      var deviceToken = data.registrationId;
-      var json = '{"data"{"message":'+message+'},"to":"'+deviceToken+'"}';
-      post(json);
-    }, function(error) {
-      console.log("No registration id stored.");
-    });
-}
-
-function post(json) {
-  chrome.storage.promise.local.get('apiKey')
-    .then(function(data) {
-      var apiKey = data.apiKey;
-      jQuery.ajax({
-        url: 'https://android.googleapis.com/gcm/send',
-        method: 'post',
-        headers: {
-          'Authorization': 'key='+apiKey,
-          'X-Request': 'JSON',
-          'Content-Type': 'application/json'},
-        data: json
-      }).done(function(){
-        // todo
-      }).error(function(error){
-        // todo
-      });
-
-    }, function(error) {
-      console.log("No api token stored.");
-    });
-}
-
-chrome.gcm.onMessage.addListener(function(obj) {
-  var gcmMessage = obj.data;
-  var message = JSON.parse(gcmMessage.message);
-  ConversationService.log(message).then(function(conversationId){
-    popNotification(message, conversationId);
-  });
-});
-
-function popNotification(message, conversationId){
-  var timestamp = new Date().getTime();
-  timestamp = Math.floor(timestamp / 10000) * 10000 // Persist notification for 10 seconds... Then start new one.
-  var notificationId = "conversation-"+conversationId+timestamp;
-
-  var opts = {
-    type: "basic",
-    iconUrl: "/images/icon-38.png",
-    buttons: [{"title": "Reply", iconUrl:"/images/icon-38.png"}],
-    title: "Autem",
-    isClickable: true,
-    eventTime: new Date().getTime(),
-    contextMessage: String(new Date(message.timestamp.iLocalMillis)),
-    message: message.message
-  }
-
-  chrome.notifications.getAll(function(notifications){
-    if(notifications[notificationId]){
-      chrome.notifications.update(notificationId, opts)
-    } else {
-      createNewMessageNotification(notificationId, opts, conversationId);
-    }
-  });
-
-}
-
-function createNewMessageNotification(notificationId, opts, conversationId) {
-  chrome.notifications.create(notificationId, opts);
-
-  chrome.notifications.onClicked.addListener(function(id) {
-    if(id.indexOf(notificationId) >= 0) {
-      openConversation(conversationId);
-    }
-  });
-
-  chrome.notifications.onButtonClicked.addListener(function(id, buttonIndex) {
-    if(id.indexOf(notificationId) >= 0 && buttonIndex == 0) {
-      openConversation(conversationId);
-    }
-  });
-
-  chrome.notifications.onClosed.addListener(function(id, closedByUser){
-    if(id.indexOf(notificationId) >= 0) {
-      chrome.notifications.clear(notificationId);
-    }
-  });
-}
-
-function openConversation(conversationId) {
-  console.log("setting focus to "+ conversationId);
-  focusedConversationId = conversationId;
-  chrome.windows.create({
-    'url': 'conversation.html',
-    'type': 'popup',
-    'width': 320,
-    'height': 420
-  });
-}
-
-function clearConversations(){
-  chrome.storage.local.set({conversations: []});
-}

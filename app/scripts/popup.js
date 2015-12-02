@@ -1,8 +1,9 @@
 'use strict';
 
 function testMessage() {
+  var to = document.getElementById('test-to').value
   var message = document.getElementById('test-message').value
-  chrome.extension.getBackgroundPage().sendMessage(message);
+  chrome.extension.getBackgroundPage().MessageService.sendMessage(to, message);
 }
 
 document.addEventListener('DOMContentLoaded', function () {
