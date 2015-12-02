@@ -5,8 +5,10 @@ var focusedConversation;
 var ConversationService = ( function( window, undefined ) {
 
   function log(message) {
-    var contact = deriveNumber(message);
-    var msg = deriveMessage(message);
+    var contact = message.from;
+    var msg = message;
+
+    var conversation;
 
     return getConversations().then(function(conversations){
       var existingConversationFound;
@@ -24,23 +26,13 @@ var ConversationService = ( function( window, undefined ) {
       }
       if(!existingConversationFound) {
         // push new conversation
-        conversations.push({'contact': contact, 'messages': [msg]});
+        conversation = {'contact': contact, 'messages': [msg]};
+        conversations.push(conversation);
       }
       return chrome.storage.promise.local.set({'conversations': conversations}).then(function() {
-        return msg;
+        return conversation;
       });
     });
-  }
-
-  function deriveNumber(message){
-    var number = message.split("Message:")[0];
-    number = number.split("From:")[1].trim();
-    return number;
-  }
-
-  function deriveMessage(message){
-    var msg = message.split("Message:")[1].trim();
-    return msg;
   }
 
   function getConversations() {
@@ -105,6 +97,12 @@ function sendMessage(message) {
     });
 }
 
+
+function createTestMessage(message){
+  var msg = '{"from":"5152576553","message": "'+message+'","timestamp":{"iChronology":{"iBase":{"iMinDaysInFirstWeek":4}},"iLocalMillis":1449049419210}}';
+  sendTestMessage(msg);
+}
+
 function sendTestMessage(message) {
   message = JSON.stringify(message);
   chrome.storage.promise.local.get('registrationId')
@@ -136,18 +134,19 @@ function post(json) {
     });
 }
 
-var conversation;
-
 chrome.gcm.onMessage.addListener(function(obj) {
-  var message = obj.data.message;
-  ConversationService.log(message).then(function(msg){
-    popNotification(msg);
+  var gcmMessage = obj.data;
+  var message = JSON.parse(gcmMessage.message);
+  ConversationService.log(message).then(function(conversation){
+    popNotification(message, conversation);
   });
 });
 
-function popNotification(message){
+function popNotification(message, conversation){
   var timestamp = new Date().getTime();
   timestamp = Math.floor(timestamp / 10000) * 10000 // Persist notification for 10 seconds... Then start new one.
+  var notificationId = "conversation-"+timestamp;
+
   var opts = {
     type: "basic",
     iconUrl: "/images/icon-38.png",
@@ -155,35 +154,37 @@ function popNotification(message){
     title: "Autem",
     isClickable: true,
     eventTime: new Date().getTime(),
-    message: message
+    contextMessage: String(new Date(message.timestamp.iLocalMillis)),
+    message: message.message
   }
-  var conversationId = "conversation"+timestamp;
+
   chrome.notifications.getAll(function(notifications){
-    if(notifications.conversation){
-      chrome.notifications.update(conversationId, opts)
+    if(notifications[notificationId]){
+      chrome.notifications.update(notificationId, opts)
     } else {
-      chrome.notifications.create(conversationId, opts);
+      chrome.notifications.create(notificationId, opts);
     }
   });
+
+  chrome.notifications.onClicked.addListener(function(id) {
+    if(id.indexOf(notificationId) >= 0) {
+      openConversation(conversation);
+    }
+  });
+
+  chrome.notifications.onButtonClicked.addListener(function(id, buttonIndex) {
+    if(id.indexOf(notificationId) >= 0 && buttonIndex == 0) {
+      openConversation(conversation);
+    }
+  });
+
+  chrome.notifications.onClosed.addListener(function(id, closedByUser){
+    if(id.indexOf(notificationId) >= 0) {
+      chrome.notifications.clear(notificationId);
+    }
+  });
+
 }
-
-chrome.notifications.onClosed.addListener(function(notificationId, closedByUser){
-  if(notificationId.indexOf("conversation") >= 0) {
-    chrome.notifications.clear("conversation");
-  }
-});
-
-chrome.notifications.onClicked.addListener(function(notificationId) {
-  if(notificationId.indexOf("conversation") >= 0) {
-    openConversation(conversation);
-  }
-});
-
-chrome.notifications.onButtonClicked.addListener(function(notificationId, buttonIndex) {
-  if(notificationId.indexOf("conversation") >= 0 && buttonIndex == 0) {
-    openConversation(conversation);
-  }
-});
 
 function openConversation(conversation) {
   focusedConversation = conversation;
@@ -197,9 +198,4 @@ function openConversation(conversation) {
 
 function clearConversations(){
   chrome.storage.local.set({conversations: []});
-}
-
-function createTestMessage(message){
-  var msg = "From: (515) 555-5555 Message: "+ message;
-  sendTestMessage(msg);
 }

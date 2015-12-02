@@ -6,7 +6,7 @@ $(document).ready(function(){
   var conversation = chrome.extension.getBackgroundPage().focusedConversation;
   var messages = conversation.messages;
   for(var i = 0; i < messages.length; i++) {
-    $conversationContainer.append("<p>" + conversation.contact + " : " + messages[i] + "</p>");
+    $conversationContainer.append("<p>" + conversation.contact + " : " + messages[i].message + "</p>");
   }
 
 });
