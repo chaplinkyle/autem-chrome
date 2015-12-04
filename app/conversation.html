@@ -4,18 +4,32 @@
   <meta charset="utf-8">
   <link href="styles/main.css" rel="stylesheet">
   <style type="text/css">
-    .input-display {
-      width: 400px;
+    #conversation-container {
+      overflow:auto;
+      height: 300px;
     }
+    #reply-text-area {
+      width:100%;
+      height: 40px;
+    }
+    #send-button {
+      float: right;
+      margin-bottom: 10px
+    }
+    #reply-box {
+      margin-bottom: 10px;
+    }
+
   </style>
   <script src="bower_components/jquery/dist/jquery.min.js"></script>
   <script src="bower_components/chrome-storage-promise/dist/chrome-storage-promise.js"></script>
   <script src="scripts/conversation.js"></script>
 </head>
 <body>
-<h1>Conversation</h1>
-<div id="conversation-container" style="overflow:auto">
+<h3>Conversation</h3>
+<div id="conversation-container">
 
 </div>
+<div id="reply-box"><textarea id="reply-text-area"></textarea></div><button id="send-button">Send</button>
 </body>
 </html>

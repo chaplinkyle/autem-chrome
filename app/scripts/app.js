@@ -12,8 +12,12 @@ chrome.gcm.onMessage.addListener(function(obj) {
 
 var ConversationService = ( function( window, undefined ) {
 
-  function log(message) {
-    var contact = message.from;
+  function log(message, sendContact) {
+    if (typeof sendContact == 'undefined'){
+      var contact = message.from;
+    } else {
+      contact = sendContact;
+    }
     var msg = message;
     return getConversations().then(function(conversations){
       var conversation;
@@ -67,9 +71,16 @@ var ConversationService = ( function( window, undefined ) {
       });
   }
 
+  function sendMessage(conversationId, message) {
+    message = JSON.parse(message);
+    log(message,conversationId);
+    MessageService.sendMessage(message.to, message.message);
+  }
+
   return {
     log : log,
-    getConversation : getConversation
+    getConversation : getConversation,
+    sendMessage : sendMessage
   };
 } )( window );
 
@@ -233,7 +244,7 @@ var Conversations = ( function( window, undefined ) {
       'url': 'conversation.html',
       'type': 'popup',
       'width': 320,
-      'height': 420
+      'height': 435
     });
   }
 
