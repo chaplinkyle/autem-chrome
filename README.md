@@ -6,7 +6,6 @@ Instructions:
 * bower install
 * Load upacked extension
 * Enter project number from developer console.
-* press apply
+* press register
 * enter api key
 * enter device token
-* press apply
