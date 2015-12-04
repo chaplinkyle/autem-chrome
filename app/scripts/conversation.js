@@ -53,4 +53,5 @@ function sendMessage(conversationId) {
   var text = $('#reply-text-area').val();
   var payload = '{"contactName":"me",' + '"to":"' + conversationId + '","message":"'+ text +'"}';
   ConversationService.sendMessage(conversationId, payload);
+  $('#reply-text-area').val('');
 }
