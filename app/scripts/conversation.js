@@ -1,17 +1,17 @@
 'use strict';
-
+var ConversationService;
 $(document).ready(function(){
   var $conversationContainer =  $("#conversation-container");
 
   var conversationId = chrome.extension.getBackgroundPage().focusedConversationId;
-  var ConversationService = chrome.extension.getBackgroundPage().ConversationService;
+  ConversationService = chrome.extension.getBackgroundPage().ConversationService;
 
   ConversationService.getConversation(conversationId).then(function(conversation){
     var messages = conversation.messages;
     for(var i = 0; i < messages.length; i++) {
       var message = messages[i];
       updateConversation(message.contactName, messages[i].message);
-      window.scrollTo(0,document.body.scrollHeight);
+      scrollToBottom();
     }
   });
 
@@ -24,7 +24,7 @@ $(document).ready(function(){
               if(tempConversation.messages.length < messages.length) {
                 var message = messages[messages.length-1];
                 updateConversation(message.contactName, message.message);
-                window.scrollTo(0,document.body.scrollHeight);
+                scrollToBottom();
               }
               break;
             }
@@ -32,10 +32,25 @@ $(document).ready(function(){
     });
   });
   
+  $('#send-button').on('click',function(event) {
+    event.preventDefault();
+    sendMessage(conversationId);
+  });
 
 });
 
 function updateConversation(contactName, message) {
   var $conversationContainer =  $("#conversation-container");
   $conversationContainer.append("<p>" + contactName + " : " + message + "</p>");
+}
+
+function scrollToBottom() {
+  var elem = document.getElementById('conversation-container');
+  elem.scrollTop = elem.scrollHeight;
+}
+
+function sendMessage(conversationId) {
+  var text = $('#reply-text-area').val();
+  var payload = '{"contactName":"me",' + '"to":"' + conversationId + '","message":"'+ text +'"}';
+  ConversationService.sendMessage(conversationId, payload);
 }
