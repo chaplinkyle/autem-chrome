@@ -37,6 +37,13 @@ $(document).ready(function(){
     sendMessage(conversationId);
   });
 
+  $("#reply-text-area").keypress(function(event) {
+    if (event.which == 13) {
+        event.preventDefault();
+        sendMessage(conversationId);
+    }
+  });
+
 });
 
 function updateConversation(contactName, message) {
