@@ -22,6 +22,7 @@
     "storage",
     "gcm",
     "idle",
+    "tabs",
     "https://android.googleapis.com/gcm/*"
   ],
   "browser_action": {

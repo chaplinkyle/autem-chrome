@@ -1,6 +1,7 @@
 'use strict';
 var ConversationService;
 $(document).ready(function(){
+
   var $conversationContainer =  $("#conversation-container");
 
   var conversationId = chrome.extension.getBackgroundPage().focusedConversationId;
@@ -48,7 +49,20 @@ $(document).ready(function(){
 
 function updateConversation(contactName, message) {
   var $conversationContainer =  $("#conversation-container");
+  message = format(message);
   $conversationContainer.append("<p>" + contactName + " : " + message + "</p>");
+}
+
+function format(message) {
+  message = linkifyUrls(message);
+  return message;
+}
+
+function linkifyUrls(text) {
+  var urlRegex =/(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/ig;
+  return text.replace(urlRegex, function(url) {
+    return '<a class="linkified" target="_newtab" href="' + url + '">' + url + '</a>';
+  });
 }
 
 function scrollToBottom() {
