@@ -4,21 +4,37 @@
     <meta charset="utf-8">
     <link href="styles/main.css" rel="stylesheet">
     <style type="text/css">
-      .input-display {
-        width: 400px;
-      }
+    #container {
+      width: 400px;
+    }
+    #app-name {
+      float: left;
+      font-size: 30px;
+    }
+    #app-settings-div {
+      float: right;
+    }
+    .clearfix {
+      clear: both;
+    }
     </style>
-    <script src="scripts/popup.js"></script>
     <script src="bower_components/jquery/dist/jquery.min.js"></script>
+    <script src="scripts/popup.js"></script>
   </head>
   <body>
-    <h1>Autem</h1>
-    <p>To: <input id='test-to' class="input-display" type="text"></p>
-    <p>Message: <input id='test-message' class="input-display" type="text"></p>
-    <input id="send-button" type="button" value="Send">
-
-    <p>
-      <a id="app-settings-link" href="#"> App Settings </a>
-    </p>
+    <div id="container">
+      <div id="app-name">
+        <span>Autem</span>
+      </div>
+      <div id="app-settings-div">
+        <span >
+          <a id="app-settings-link" href="#"> App Settings </a>
+        </span>
+      </div>
+      <div class="clearfix"></div>
+      <div id="converstations">
+        
+      </div>
+    </div>
   </body>
 </html>
