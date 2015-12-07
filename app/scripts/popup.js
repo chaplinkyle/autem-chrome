@@ -34,7 +34,6 @@ function loadConversations() {
 	    	}
 	    	jQuery(converstationsElement).append('<div id="' + conversation.contact + '"class="conversation"><a href="#">' + conversation.messages[conversation.messages.length-1].contactName + '</a></div');
 		});
-	    // add onclick here?
- 	});
-
+	    jQuery('.conversation').on('click', openConversation(this));
+	});
 }
