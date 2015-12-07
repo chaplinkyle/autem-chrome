@@ -80,6 +80,7 @@ var ConversationService = ( function( window, undefined ) {
   return {
     log : log,
     getConversation : getConversation,
+    getConversations : getConversations,
     sendMessage : sendMessage
   };
 } )( window );
