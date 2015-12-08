@@ -28,11 +28,7 @@ function loadConversations() {
 	var converstationsElement = jQuery('#converstations');
 	ConversationService.getConversations().then(function(conversations){
 	    jQuery(conversations).each(function(index, conversation) {
-	    	var contactName = conversation.messages[conversation.messages.length-1];
-	    	if(typeof contactName == 'undefined') {
-	    		contactName = conversation.contact;
-	    	}
-	    	jQuery(converstationsElement).append('<div id="' + conversation.contact + '"class="conversation"><a href="#">' + conversation.messages[conversation.messages.length-1].contactName + '</a></div');
+	    	jQuery(converstationsElement).append('<div id="' + conversation.id + '"class="conversation"><a href="#">' + conversation.contact.name + '</a></div');
 		});
 	    jQuery('.conversation').on("click", function() {
   			openConversation(jQuery(this));

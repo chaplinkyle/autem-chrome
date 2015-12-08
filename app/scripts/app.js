@@ -12,22 +12,21 @@ chrome.gcm.onMessage.addListener(function(obj) {
 
 var ConversationService = ( function( window, undefined ) {
 
-  function log(message, sendContact) {
-    if (typeof sendContact == 'undefined'){
-      var contact = message.from;
-    } else {
-      contact = sendContact;
-    }
-    var msg = message;
+  function log(message) {
     return getConversations().then(function(conversations){
       var conversation;
       var existingConversationFound;
       if(conversations){
         for (var i = 0; i < conversations.length; i++) {
           conversation = conversations[i];
-          if(conversation.contact == contact) {
+          if(conversation.id == message.autemTextMessage.to || conversation.id == message.autemTextMessage.from) {
+            //always update contact info incase name gets updated
+            if(typeof message.autemContact != 'undefined') {
+              conversation.contact = message.autemContact;
+              message.autemTextMessage.from = message.autemContact.name;
+            }
             //update messages
-            conversation.messages.push(msg);
+            conversation.messages.push(message.autemTextMessage);
             existingConversationFound = true;
             break;
           }
@@ -37,11 +36,14 @@ var ConversationService = ( function( window, undefined ) {
       }
       if(!existingConversationFound) {
         // push new conversation
-        conversation = {'contact': contact, 'messages': [msg]};
+        if(typeof message.autemContact != 'undefined') {
+          message.autemTextMessage.from = message.autemContact.name;
+        }
+        conversation = {'id': message.autemContact.phoneNumber, 'contact': message.autemContact, 'messages': [message.autemTextMessage]};
         conversations.push(conversation);
       }
       return chrome.storage.promise.local.set({'conversations': conversations}).then(function() {
-        return conversation.contact;
+        return conversation.id;
       });
     });
   }
@@ -52,7 +54,7 @@ var ConversationService = ( function( window, undefined ) {
         if (conversations) {
           for (var i = 0; i < conversations.length; i++) {
             var conversation = conversations[i];
-            if (conversation.contact == conversationId) {
+            if (conversation.id == conversationId) {
               resolve(conversation);
             }
           }
@@ -73,8 +75,8 @@ var ConversationService = ( function( window, undefined ) {
 
   function sendMessage(conversationId, message) {
     message = JSON.parse(message);
-    log(message,conversationId);
-    MessageService.sendMessage(message.to, message.message);
+    log(message);
+    MessageService.sendMessage(message.autemTextMessage.to, message.autemTextMessage.message);
   }
 
   return {
@@ -185,13 +187,13 @@ var Notifications = ( function( window, undefined ) {
 
     var opts = {
       type: "basic",
-      title: "Sms from: " + message.contactName,
+      title: "Sms from: " + message.autemContact.name,
       iconUrl: "/images/icon-38.png",
       buttons: [{"title": "Reply", iconUrl:"/images/icon-38.png"}],
       isClickable: true,
       eventTime: new Date().getTime(),
-      contextMessage: String(new Date(message.timestamp.iLocalMillis)),
-      message: message.message
+      contextMessage: String(new Date(message.autemTextMessage.timestamp.iLocalMillis)),
+      message: message.autemTextMessage.message
     }
 
     chrome.notifications.getAll(function(notifications){

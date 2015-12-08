@@ -11,7 +11,7 @@ $(document).ready(function(){
     var messages = conversation.messages;
     for(var i = 0; i < messages.length; i++) {
       var message = messages[i];
-      updateConversation(message.contactName, messages[i].message);
+      updateConversation(message.from, messages[i].message);
       scrollToBottom();
     }
   });
@@ -21,10 +21,10 @@ $(document).ready(function(){
       var messages = conversation.messages;
       for (var i = 0; i < changes.conversations.oldValue.length; i++) {
             var tempConversation = changes.conversations.oldValue[i];
-            if (tempConversation.contact == conversationId) {
+            if (tempConversation.id == conversationId) {
               if(tempConversation.messages.length < messages.length) {
                 var message = messages[messages.length-1];
-                updateConversation(message.contactName, message.message);
+                updateConversation(message.from, message.message);
                 scrollToBottom();
               }
               break;
@@ -47,10 +47,10 @@ $(document).ready(function(){
 
 });
 
-function updateConversation(contactName, message) {
+function updateConversation(from, message) {
   var $conversationContainer =  $("#conversation-container");
   message = format(message);
-  $conversationContainer.append("<p>" + contactName + " : " + message + "</p>");
+  $conversationContainer.append("<p>" + from + " : " + message + "</p>");
 }
 
 function format(message) {
@@ -72,7 +72,7 @@ function scrollToBottom() {
 
 function sendMessage(conversationId) {
   var text = $('#reply-text-area').val();
-  var payload = '{"contactName":"me",' + '"to":"' + conversationId + '","message":"'+ text +'"}';
+  var payload = '{"autemTextMessage" : {"from":"me",' + '"to":"' + conversationId + '","message":"'+ text +'"}}';
   ConversationService.sendMessage(conversationId, payload);
   $('#reply-text-area').val('');
 }
