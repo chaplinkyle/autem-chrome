@@ -23,6 +23,7 @@ var ConversationService = ( function( window, undefined ) {
             //always update contact info incase name gets updated
             if(typeof message.autemContact != 'undefined') {
               conversation.contact = message.autemContact;
+              message.autemTextMessage.from = message.autemContact.name;
             }
             //update messages
             conversation.messages.push(message.autemTextMessage);
@@ -35,6 +36,9 @@ var ConversationService = ( function( window, undefined ) {
       }
       if(!existingConversationFound) {
         // push new conversation
+        if(typeof message.autemContact != 'undefined') {
+          message.autemTextMessage.from = message.autemContact.name;
+        }
         conversation = {'id': message.autemContact.phoneNumber, 'contact': message.autemContact, 'messages': [message.autemTextMessage]};
         conversations.push(conversation);
       }
