@@ -6,6 +6,10 @@ $(document).ready(function () {
   $("#register-button").on('click', register);
   $("#device-token").on('blur', save);
   $("#api-key").on('blur', save);
+  $("#clear-conversations").on('click', function(event) {
+    event.preventDefault();
+    clearConversations();
+  });
 });
 
 window.onbeforeunload = function(){
@@ -78,4 +82,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
 function openSettings() {
   chrome.tabs.create({ url: "settings.html" });
+}
+
+function clearConversations() {
+  chrome.storage.promise.local.set({'conversations': []});
 }
