@@ -1,7 +1,7 @@
 'use strict';
 var ConversationService;
 $(document).ready(function(){
-
+  $("#reply-text-area").focus();
   var $conversationContainer =  $("#conversation-container");
 
   var conversationId = chrome.extension.getBackgroundPage().focusedConversationId;
