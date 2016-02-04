@@ -157,7 +157,7 @@ var MessageService = ( function( window, undefined ) {
     return new Promise(function(resolve, reject){
       if(deviceToken){
         var payload = '{"to":"'+ to +'","message":"'+ message +'"}';
-        var queueMessage = '{"data"{"message":'+payload+'},"to":"'+deviceToken+'"}';
+        var queueMessage = '{"data"{"message":'+payload+'},"to":"'+deviceToken+'", "priority":"high"}';
         resolve(queueMessage);
       } else {
         reject("No device token stored.")
