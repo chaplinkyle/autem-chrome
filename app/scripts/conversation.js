@@ -2,6 +2,7 @@
 var ConversationService;
 $(document).ready(function(){
   $("#reply-text-area").focus();
+
   var $conversationContainer =  $("#conversation-container");
 
   var conversationId = chrome.extension.getBackgroundPage().focusedConversationId;
@@ -42,6 +43,14 @@ $(document).ready(function(){
     if (event.which == 13) {
         event.preventDefault();
         sendMessage(conversationId);
+    } 
+  });
+
+  $("#reply-text-area").keydown(function(event) {
+    if (event.which == 27) {
+        event.preventDefault();
+        console.log("close window");
+        window.close();
     }
   });
 
