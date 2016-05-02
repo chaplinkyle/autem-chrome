@@ -247,7 +247,7 @@ var Conversations = ( function( window, undefined ) {
       'url': 'conversation.html',
       'type': 'popup',
       'width': 320,
-      'height': 435
+      'height': 455
     });
   }
 

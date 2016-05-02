@@ -15,7 +15,7 @@ function openConversation(converstaionLink) {
       'url': 'conversation.html',
       'type': 'popup',
       'width': 320,
-      'height': 435
+      'height': 455
     });
 }
 
